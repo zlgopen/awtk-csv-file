@@ -123,6 +123,12 @@ TEST(csv_file, modify) {
   ASSERT_EQ(csv_file_get_cols(csv), 3);
   ASSERT_EQ(csv->has_title, FALSE);
 
+  ASSERT_EQ(csv_file_append_row(csv, "21,22,23"), RET_OK);
+  ASSERT_EQ(csv_file_insert_row(csv, 1, "11,12,13"), RET_OK);
+  ASSERT_STREQ(csv_file_get(csv, 1, 0), "11");
+  ASSERT_STREQ(csv_file_get(csv, 2, 0), "21");
+  ASSERT_EQ(csv_file_get_rows(csv), 3);
+  csv_file_save(csv, "test.csv");
   csv_file_destroy(csv);
 }
 

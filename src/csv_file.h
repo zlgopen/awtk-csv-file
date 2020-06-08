@@ -97,6 +97,20 @@ csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t sh
 const char* csv_file_get(csv_file_t* csv, uint32_t row, uint32_t col);
 
 /**
+ * @method csv_file_set
+ *
+ * 修改指定行列的数据。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {uint32_t} row 行号。
+ * @param {uint32_t} col 列号。
+ * @param {const char*} value 值。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_set(csv_file_t* csv, uint32_t row, uint32_t col, const char* value);
+
+/**
  * @method csv_file_get_title
  *
  * 获取标题(不存在则返回NULL)。
@@ -129,6 +143,57 @@ uint32_t csv_file_get_rows(csv_file_t* csv);
  */
 uint32_t csv_file_get_cols(csv_file_t* csv);
 
+
+/**
+ * @method csv_file_remove_row
+ *
+ * 删除指定行。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {uint32_t} row 行号。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_remove_row(csv_file_t* csv, uint32_t row);
+
+
+/**
+ * @method csv_file_append_row
+ *
+ * 追加一行。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} data 数据。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_append_row(csv_file_t* csv, const char* data);
+
+/**
+ * @method csv_file_insert_row
+ *
+ * 插入一行。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {uint32_t} row 行号。
+ * @param {const char*} data 数据。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_insert_row(csv_file_t* csv, uint32_t row, const char* data);
+
+/**
+ * @method csv_file_save
+ *
+ * 保存。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} filename 文件名。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_save(csv_file_t* csv, const char* filename);
+
 /**
  * @method csv_file_destroy
  *
@@ -143,12 +208,7 @@ ret_t csv_file_destroy(csv_file_t* csv);
 /*public for test*/
 const char* csv_file_get_by_name(csv_file_t* csv, uint32_t row, const char* name);
 int32_t csv_file_get_col_of_name(csv_file_t* csv, const char* name);
-ret_t csv_file_set(csv_file_t* csv, uint32_t row, uint32_t col, const char* value);
 csv_row_t* csv_file_get_row(csv_file_t* csv, uint32_t row);
-csv_row_t* csv_file_insert_row(csv_file_t* csv, uint32_t row);
-csv_row_t* csv_file_append_row(csv_file_t* csv);
-ret_t csv_file_remove_row(csv_file_t* csv, uint32_t row);
-ret_t csv_file_save(csv_file_t* csv, const char* filename);
 
 uint32_t csv_row_count_cols(csv_row_t* row);
 const char* csv_row_get(csv_row_t* row, uint32_t col);

@@ -42,6 +42,7 @@ int main(int argc, char* argv[]) {
     log_debug("\n");
   }
 
+  csv_file_save(csv, "output.csv");
   csv_file_destroy(csv);
   return 0;
 }

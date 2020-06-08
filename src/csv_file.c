@@ -64,6 +64,25 @@ int32_t csv_row_get_col(csv_row_t* row, const char* value) {
   return -1;
 }
 
+ret_t csv_row_to_str(csv_row_t* row, str_t* str, char sep) {
+  uint32_t i = 0;
+  uint32_t col = 0;
+  return_value_if_fail(row != NULL && str != NULL, RET_BAD_PARAMS);
+
+  str_set(str, "");
+  while ((i + 1) < row->size) {
+    const char* p = row->buff + i;
+    str_append(str, p);
+    str_append_char(str, sep);
+
+    i += strlen(p) + 1;
+  }
+
+  str_append(str, "\r\n");
+
+  return RET_OK;
+}
+
 uint32_t csv_row_count_cols(csv_row_t* row) {
   uint32_t i = 0;
   uint32_t cols = 0;
@@ -90,6 +109,24 @@ ret_t csv_row_init(csv_row_t* row, char* buff, uint32_t size, bool_t should_free
   row->buff = buff;
   row->size = size;
   row->should_free_buff = should_free_buff;
+
+  return RET_OK;
+}
+
+static ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep) {
+  uint32_t i = 0;
+  csv_row_reset(row);
+
+  row->buff = tk_strdup(data);
+  return_value_if_fail(row->buff != NULL, RET_OOM);
+
+  row->should_free_buff = TRUE;
+  row->size = strlen(data) + 1;
+  for(i = 0; i < row->size; i++) {
+    if(row->buff[i] == sep) {
+      row->buff[i] = '\0';
+    }
+  }
 
   return RET_OK;
 }
@@ -262,7 +299,7 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
 
   return_value_if_fail(csv_rows_init(&(csv->rows), rows) == RET_OK, NULL);
 
-  r = csv_file_append_row(csv);
+  r = csv_rows_append(&(csv->rows));
   return_value_if_fail(r != NULL, NULL);
 
   r->buff = p;
@@ -275,7 +312,7 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
         i++;
       }
 
-      r = csv_file_append_row(csv);
+      r = csv_rows_append(&(csv->rows));
       return_value_if_fail(r != NULL, NULL);
       r->buff = p;
     } else if (*p == csv->sep) {
@@ -354,16 +391,24 @@ csv_row_t* csv_file_get_row(csv_file_t* csv, uint32_t row) {
   return csv_rows_get(&(csv->rows), row);
 }
 
-csv_row_t* csv_file_insert_row(csv_file_t* csv, uint32_t row) {
-  return_value_if_fail(csv != NULL, NULL);
+ret_t csv_file_insert_row(csv_file_t* csv, uint32_t row, const char* data) {
+  csv_row_t* r = NULL;
+  return_value_if_fail(csv != NULL && data != NULL, RET_BAD_PARAMS);
 
-  return csv_rows_insert(&(csv->rows), row);
+  r = csv_rows_insert(&(csv->rows), row);
+  return_value_if_fail(r != NULL, RET_OOM);
+  
+  return csv_row_set_data(r, data, csv->sep);
 }
 
-csv_row_t* csv_file_append_row(csv_file_t* csv) {
-  return_value_if_fail(csv != NULL, NULL);
+ret_t csv_file_append_row(csv_file_t* csv, const char* data) {
+  csv_row_t* r = NULL;
+  return_value_if_fail(csv != NULL && data != NULL, RET_BAD_PARAMS);
 
-  return csv_rows_append(&(csv->rows));
+  r = csv_rows_append(&(csv->rows));
+  return_value_if_fail(r != NULL, RET_OOM);
+
+  return csv_row_set_data(r, data, csv->sep);
 }
 
 ret_t csv_file_remove_row(csv_file_t* csv, uint32_t row) {
@@ -373,9 +418,23 @@ ret_t csv_file_remove_row(csv_file_t* csv, uint32_t row) {
 }
 
 ret_t csv_file_save(csv_file_t* csv, const char* filename) {
+  str_t str;
+  uint32_t i = 0;
+  csv_row_t* r = NULL;
+  fs_file_t* f = NULL;
   return_value_if_fail(csv != NULL && filename != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(str_init(&str, 512) != NULL, RET_OOM);
 
-  /*TODO*/
+  f = fs_open_file(os_fs(), filename, "wb+");
+  if(f != NULL) {
+    for(i = 0; i < csv->rows.size; i++) {
+      r = csv->rows.rows + i;
+      csv_row_to_str(r, &str, csv->sep);
+      ENSURE(fs_file_write(f, str.str, str.size) == str.size);
+    }
+    fs_file_close(f);
+  }
+  str_reset(&str);
 
   return RET_NOT_IMPL;
 }
