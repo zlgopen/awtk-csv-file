@@ -24,7 +24,6 @@
 #include "tkc/utils.h"
 #include "tkc/fs.h"
 
-
 static csv_file_t* csv_file_parse(csv_file_t* csv);
 static ret_t csv_rows_extend_rows(csv_rows_t* rows, uint32_t delta);
 
@@ -98,9 +97,51 @@ uint32_t csv_row_count_cols(csv_row_t* row) {
 }
 
 ret_t csv_row_set(csv_row_t* row, uint32_t col, const char* value) {
+  char* p = NULL;
+  uint32_t old_len = 0;
+  uint32_t new_len = 0;
   return_value_if_fail(row != NULL && value != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(row->buff != NULL, RET_BAD_PARAMS);
+  p = (char*)csv_row_get(row, col);
+  return_value_if_fail(p != NULL, RET_BAD_PARAMS);
 
-  return RET_OK;
+  old_len = strlen(p);
+  new_len = strlen(value);
+
+  if (old_len == new_len) {
+    strcpy(p, value);
+    return RET_OK;
+  } else if (old_len > new_len) {
+    uint32_t len = row->size - (p + old_len - row->buff);
+    strcpy(p, value);
+    memmove(p + new_len, p + old_len, len);
+    row->size = row->size + new_len - old_len;
+    return RET_OK;
+  } else {
+    uint32_t d = 0;
+    uint32_t s = 0;
+    uint32_t size = 0;
+    uint32_t len = row->size + new_len - old_len;
+    char* buff = TKMEM_ALLOC(len);
+    return_value_if_fail(buff != NULL, RET_OOM);
+
+    memset(buff, 0x00, len);
+    size = p - row->buff;
+    memcpy(buff, row->buff, size);
+
+    d = size;
+    s = size;
+    memcpy(buff + d, value, new_len + 1);
+
+    d += new_len + 1;
+    s += old_len + 1;
+    memcpy(buff + d, row->buff + s, new_len + 1);
+
+    row->buff = buff;
+    row->size = len;
+    row->should_free_buff = TRUE;
+    return RET_OK;
+  }
 }
 
 ret_t csv_row_init(csv_row_t* row, char* buff, uint32_t size, bool_t should_free_buff) {
@@ -122,8 +163,8 @@ static ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep) {
 
   row->should_free_buff = TRUE;
   row->size = strlen(data) + 1;
-  for(i = 0; i < row->size; i++) {
-    if(row->buff[i] == sep) {
+  for (i = 0; i < row->size; i++) {
+    if (row->buff[i] == sep) {
       row->buff[i] = '\0';
     }
   }
@@ -244,7 +285,8 @@ csv_file_t* csv_file_create(const char* filename, char sep) {
   return csv_file_create_with_buff(buff, size, TRUE, sep);
 }
 
-csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free, char sep) {
+csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
+                                      char sep) {
   csv_file_t* csv = NULL;
   return_value_if_fail(buff != NULL, NULL);
 
@@ -397,7 +439,7 @@ ret_t csv_file_insert_row(csv_file_t* csv, uint32_t row, const char* data) {
 
   r = csv_rows_insert(&(csv->rows), row);
   return_value_if_fail(r != NULL, RET_OOM);
-  
+
   return csv_row_set_data(r, data, csv->sep);
 }
 
@@ -426,8 +468,8 @@ ret_t csv_file_save(csv_file_t* csv, const char* filename) {
   return_value_if_fail(str_init(&str, 512) != NULL, RET_OOM);
 
   f = fs_open_file(os_fs(), filename, "wb+");
-  if(f != NULL) {
-    for(i = 0; i < csv->rows.size; i++) {
+  if (f != NULL) {
+    for (i = 0; i < csv->rows.size; i++) {
       r = csv->rows.rows + i;
       csv_row_to_str(r, &str, csv->sep);
       ENSURE(fs_file_write(f, str.str, str.size) == str.size);
