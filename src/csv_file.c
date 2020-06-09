@@ -65,7 +65,6 @@ int32_t csv_row_get_col(csv_row_t* row, const char* value) {
 
 ret_t csv_row_to_str(csv_row_t* row, str_t* str, char sep) {
   uint32_t i = 0;
-  uint32_t col = 0;
   return_value_if_fail(row != NULL && str != NULL, RET_BAD_PARAMS);
 
   str_set(str, "");
@@ -135,7 +134,10 @@ ret_t csv_row_set(csv_row_t* row, uint32_t col, const char* value) {
 
     d += new_len + 1;
     s += old_len + 1;
-    memcpy(buff + d, row->buff + s, new_len + 1);
+    size = row->size - s; 
+    memcpy(buff + d, row->buff + s, size);
+
+    csv_row_reset(row);
 
     row->buff = buff;
     row->size = len;
@@ -504,6 +506,7 @@ ret_t csv_file_destroy(csv_file_t* csv) {
   TKMEM_FREE(csv->buff);
 
   memset(csv, 0x00, sizeof(*csv));
+  TKMEM_FREE(csv);
 
   return RET_OK;
 }
