@@ -63,6 +63,27 @@ int32_t csv_row_get_col(csv_row_t* row, const char* value) {
   return -1;
 }
 
+static ret_t csv_col_to_str(str_t* str, const char* data, char sep) {
+  const char* p = data;
+  bool_t need_escape = strchr(p, sep) != NULL || strchr(p, '\"') != NULL;
+
+  if (need_escape) {
+    str_append_char(str, '\"');
+    while (*p) {
+      if (*p == '\\' || *p == '\"') {
+        str_append_char(str, '\\');
+      }
+      str_append_char(str, *p);
+      p++;
+    }
+    str_append_char(str, '\"');
+  } else {
+    str_append(str, data);
+  }
+
+  return RET_OK;
+}
+
 ret_t csv_row_to_str(csv_row_t* row, str_t* str, char sep) {
   uint32_t i = 0;
   return_value_if_fail(row != NULL && str != NULL, RET_BAD_PARAMS);
@@ -70,7 +91,7 @@ ret_t csv_row_to_str(csv_row_t* row, str_t* str, char sep) {
   str_set(str, "");
   while ((i + 1) < row->size) {
     const char* p = row->buff + i;
-    str_append(str, p);
+    csv_col_to_str(str, p, sep);
     str_append_char(str, sep);
 
     i += strlen(p) + 1;
@@ -134,7 +155,7 @@ ret_t csv_row_set(csv_row_t* row, uint32_t col, const char* value) {
 
     d += new_len + 1;
     s += old_len + 1;
-    size = row->size - s; 
+    size = row->size - s;
     memcpy(buff + d, row->buff + s, size);
 
     csv_row_reset(row);
@@ -156,8 +177,46 @@ ret_t csv_row_init(csv_row_t* row, char* buff, uint32_t size, bool_t should_free
   return RET_OK;
 }
 
-static ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep) {
-  uint32_t i = 0;
+static ret_t csv_row_parse(csv_row_t* row, char sep) {
+  char* s = row->buff;
+  char* d = row->buff;
+  bool_t escape = FALSE;
+  bool_t in_quota = FALSE;
+
+  while (*s) {
+    char c = *s;
+
+    s++;
+    if (in_quota) {
+      if (escape) {
+        *d++ = c;
+        escape = FALSE;
+      } else {
+        if (c == '\"') {
+          in_quota = FALSE;
+        } else if (c == '\\') {
+          escape = TRUE;
+        } else {
+          *d++ = c;
+        }
+      }
+    } else {
+      if (c == sep) {
+        *d++ = '\0';
+      } else if (c == '\"') {
+        in_quota = TRUE;
+      } else {
+        *d++ = c;
+      }
+    }
+  }
+  *d = '\0';
+  row->size = d - row->buff + 1;
+
+  return RET_OK;
+}
+
+ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep) {
   csv_row_reset(row);
 
   row->buff = tk_strdup(data);
@@ -165,13 +224,8 @@ static ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep) {
 
   row->should_free_buff = TRUE;
   row->size = strlen(data) + 1;
-  for (i = 0; i < row->size; i++) {
-    if (row->buff[i] == sep) {
-      row->buff[i] = '\0';
-    }
-  }
 
-  return RET_OK;
+  return csv_row_parse(row, sep);
 }
 
 ret_t csv_row_reset(csv_row_t* row) {
@@ -339,8 +393,8 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
   uint32_t i = 0;
   csv_row_t* r = NULL;
   char* p = csv->buff;
+  char sep = csv->sep;
   uint32_t rows = csv_file_count_rows(csv);
-
   return_value_if_fail(csv_rows_init(&(csv->rows), rows) == RET_OK, NULL);
 
   r = csv_rows_append(&(csv->rows));
@@ -356,11 +410,10 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
         i++;
       }
 
+      csv_row_parse(r, sep);
       r = csv_rows_append(&(csv->rows));
       return_value_if_fail(r != NULL, NULL);
       r->buff = p;
-    } else if (*p == csv->sep) {
-      *p = '\0';
     }
   }
 
@@ -369,6 +422,7 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
     if (r->size <= 2 && *r->buff == '\0') {
       csv->rows.size--;
     }
+    csv_row_parse(r, sep);
   }
 
   r = csv_file_get_row(csv, 0);

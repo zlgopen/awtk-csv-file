@@ -17,6 +17,54 @@ TEST(csv_file, row) {
   csv_row_reset(&r);
 }
 
+TEST(csv_file, row_set_data1) {
+  csv_row_t r;
+
+  memset(&r, 0x00, sizeof(r));
+  ASSERT_EQ(csv_row_set_data(&r, "1,2,3", ','), RET_OK);
+  ASSERT_STREQ(csv_row_get(&r, 0), "1");
+  ASSERT_STREQ(csv_row_get(&r, 1), "2");
+  ASSERT_STREQ(csv_row_get(&r, 2), "3");
+
+  csv_row_reset(&r);
+}
+
+TEST(csv_file, row_set_data2) {
+  csv_row_t r;
+
+  memset(&r, 0x00, sizeof(r));
+  ASSERT_EQ(csv_row_set_data(&r, "\"1\",2,\"3\"", ','), RET_OK);
+  ASSERT_STREQ(csv_row_get(&r, 0), "1");
+  ASSERT_STREQ(csv_row_get(&r, 1), "2");
+  ASSERT_STREQ(csv_row_get(&r, 2), "3");
+
+  csv_row_reset(&r);
+}
+
+TEST(csv_file, row_set_data3) {
+  csv_row_t r;
+
+  memset(&r, 0x00, sizeof(r));
+  ASSERT_EQ(csv_row_set_data(&r, "\"1,1\",2,\"3,3\"", ','), RET_OK);
+  ASSERT_STREQ(csv_row_get(&r, 0), "1,1");
+  ASSERT_STREQ(csv_row_get(&r, 1), "2");
+  ASSERT_STREQ(csv_row_get(&r, 2), "3,3");
+
+  csv_row_reset(&r);
+}
+
+TEST(csv_file, row_set_data4) {
+  csv_row_t r;
+
+  memset(&r, 0x00, sizeof(r));
+  ASSERT_EQ(csv_row_set_data(&r, "\"1,\\\"1\",2,\"3,\\\\3\"", ','), RET_OK);
+  ASSERT_STREQ(csv_row_get(&r, 0), "1,\"1");
+  ASSERT_STREQ(csv_row_get(&r, 1), "2");
+  ASSERT_STREQ(csv_row_get(&r, 2), "3,\\3");
+
+  csv_row_reset(&r);
+}
+
 TEST(csv_file, rows) {
   uint32_t i = 0;
   csv_rows_t rows;

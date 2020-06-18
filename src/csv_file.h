@@ -81,7 +81,8 @@ csv_file_t* csv_file_create(const char* filename, char sep);
  * 
  * @return {csv_file_t} 返回csv对象。
  */
-csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free, char sep);
+csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
+                                      char sep);
 
 /**
  * @method csv_file_get
@@ -143,7 +144,6 @@ uint32_t csv_file_get_rows(csv_file_t* csv);
  */
 uint32_t csv_file_get_cols(csv_file_t* csv);
 
-
 /**
  * @method csv_file_remove_row
  *
@@ -155,7 +155,6 @@ uint32_t csv_file_get_cols(csv_file_t* csv);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t csv_file_remove_row(csv_file_t* csv, uint32_t row);
-
 
 /**
  * @method csv_file_append_row
@@ -222,6 +221,7 @@ csv_row_t* csv_rows_append(csv_rows_t* rows);
 csv_row_t* csv_rows_insert(csv_rows_t* rows, uint32_t row);
 csv_row_t* csv_rows_get(csv_rows_t* rows, uint32_t row);
 ret_t csv_rows_reset(csv_rows_t* rows);
+ret_t csv_row_set_data(csv_row_t* row, const char* data, char sep);
 
 END_C_DECLS
 
