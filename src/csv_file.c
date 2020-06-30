@@ -24,6 +24,8 @@
 #include "tkc/utils.h"
 #include "tkc/fs.h"
 
+static const uint8_t s_utf8_bom[3] = {0xEF, 0xBB, 0xBF};
+
 static csv_file_t* csv_file_parse(csv_file_t* csv);
 static ret_t csv_rows_extend_rows(csv_rows_t* rows, uint32_t delta);
 
@@ -354,6 +356,12 @@ csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t sh
     return_value_if_fail(csv != NULL, NULL);
   }
 
+  if (memcmp(buff, s_utf8_bom, sizeof(s_utf8_bom)) == 0) {
+    buff += sizeof(s_utf8_bom);
+    size -= sizeof(s_utf8_bom);
+    log_debug("skip UTF-8 BOM\n");
+  }
+  
   csv->sep = sep;
   csv->size = size;
   if (!should_free) {
@@ -525,6 +533,8 @@ ret_t csv_file_save(csv_file_t* csv, const char* filename) {
 
   f = fs_open_file(os_fs(), filename, "wb+");
   if (f != NULL) {
+    ENSURE(fs_file_write(f, s_utf8_bom, sizeof(s_utf8_bom)) == sizeof(s_utf8_bom));
+
     for (i = 0; i < csv->rows.size; i++) {
       r = csv->rows.rows + i;
       csv_row_to_str(r, &str, csv->sep);
