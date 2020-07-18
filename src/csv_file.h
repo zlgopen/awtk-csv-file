@@ -53,8 +53,10 @@ typedef struct _csv_file_t {
   uint32_t size;
   csv_rows_t rows;
 
-  uint32_t cols : 31;
+  uint32_t cols;
   char sep;
+
+  char* filename;
 } csv_file_t;
 
 /**
@@ -68,6 +70,17 @@ typedef struct _csv_file_t {
  * @return {csv_file_t} 返回csv对象。
  */
 csv_file_t* csv_file_create(const char* filename, char sep);
+
+/**
+ * @method csv_file_reload
+ *
+ * 丢弃内存中的修改，重新加载文件。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_reload(csv_file_t* csv);
 
 /**
  * @method csv_file_create_with_buff

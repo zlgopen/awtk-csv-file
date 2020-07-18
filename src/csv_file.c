@@ -332,37 +332,32 @@ ret_t csv_rows_init(csv_rows_t* rows, uint32_t init_capacity) {
   return rows->rows != NULL ? RET_OK : RET_OOM;
 }
 
-csv_file_t* csv_file_create(const char* filename, char sep) {
+csv_file_t* csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size,
+                               bool_t should_free);
+
+csv_file_t* csv_file_load(csv_file_t* csv) {
   uint32_t size = 0;
   void* buff = NULL;
-  return_value_if_fail(filename != NULL, NULL);
+  return_value_if_fail(csv != NULL && csv->filename != NULL, NULL);
 
-  buff = file_read(filename, &size);
+  buff = file_read(csv->filename, &size);
   return_value_if_fail(buff != NULL, NULL);
 
-  return csv_file_create_with_buff(buff, size, TRUE, sep);
+  return csv_file_load_buff(csv, buff, size, TRUE);
 }
 
-csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
-                                      char sep) {
-  csv_file_t* csv = NULL;
+csv_file_t* csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size,
+                               bool_t should_free) {
+  csv_file_t* ret = csv;
+  const char* org_buff = buff;
   return_value_if_fail(buff != NULL, NULL);
-
-  csv = TKMEM_ZALLOC(csv_file_t);
-  if (csv == NULL) {
-    if (should_free) {
-      TKMEM_FREE(buff);
-    }
-    return_value_if_fail(csv != NULL, NULL);
-  }
 
   if (memcmp(buff, s_utf8_bom, sizeof(s_utf8_bom)) == 0) {
     buff += sizeof(s_utf8_bom);
     size -= sizeof(s_utf8_bom);
     log_debug("skip UTF-8 BOM\n");
   }
-  
-  csv->sep = sep;
+
   csv->size = size;
   if (!should_free) {
     csv->buff = TKMEM_ALLOC(size + 1);
@@ -372,11 +367,53 @@ csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t sh
     return_value_if_fail(csv != NULL, NULL);
     memcpy(csv->buff, buff, size);
     csv->buff[size] = '\0';
+    org_buff = csv->buff;
+
+    ret = csv_file_parse(csv);
   } else {
     csv->buff = (char*)buff;
+    ret = csv_file_parse(csv);
+    csv->buff = (char*)org_buff;
   }
 
-  return csv_file_parse(csv);
+  return ret;
+}
+
+csv_file_t* csv_file_create(const char* filename, char sep) {
+  csv_file_t* csv = NULL;
+  return_value_if_fail(filename != NULL, NULL);
+  csv = TKMEM_ZALLOC(csv_file_t);
+  return_value_if_fail(csv != NULL, NULL);
+
+  csv->sep = sep;
+  csv->filename = tk_strdup(filename);
+  if (csv_file_load(csv) == NULL) {
+    TKMEM_FREE(csv->filename);
+    TKMEM_FREE(csv);
+  }
+
+  return csv;
+}
+
+csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
+                                      char sep) {
+  csv_file_t* csv = NULL;
+  return_value_if_fail(buff != NULL && size > 0, NULL);
+  csv = TKMEM_ZALLOC(csv_file_t);
+
+  if (csv == NULL) {
+    if (should_free) {
+      TKMEM_FREE(buff);
+    }
+    return NULL;
+  }
+
+  csv->sep = sep;
+  if (csv_file_load_buff(csv, buff, size, should_free) == NULL) {
+    TKMEM_FREE(csv);
+  }
+
+  return csv;
 }
 
 static uint32_t csv_file_count_rows(csv_file_t* csv) {
@@ -557,7 +594,7 @@ const char* csv_file_get_title(csv_file_t* csv) {
   return r->buff;
 }
 
-ret_t csv_file_destroy(csv_file_t* csv) {
+ret_t csv_file_reset(csv_file_t* csv) {
   uint32_t i = 0;
   return_value_if_fail(csv != NULL && csv->buff != NULL, RET_BAD_PARAMS);
 
@@ -566,11 +603,35 @@ ret_t csv_file_destroy(csv_file_t* csv) {
     csv_row_reset(r);
   }
 
-  TKMEM_FREE(csv->rows.rows);
   TKMEM_FREE(csv->buff);
-
+  TKMEM_FREE(csv->filename);
+  TKMEM_FREE(csv->rows.rows);
   memset(csv, 0x00, sizeof(*csv));
-  TKMEM_FREE(csv);
 
   return RET_OK;
+}
+
+ret_t csv_file_destroy(csv_file_t* csv) {
+  if (csv_file_reset(csv) == RET_OK) {
+    TKMEM_FREE(csv);
+  }
+
+  return RET_OK;
+}
+
+ret_t csv_file_reload(csv_file_t* csv) {
+  char sep = ',';
+  char* filename = NULL;
+  return_value_if_fail(csv != NULL && csv->filename != NULL, RET_BAD_PARAMS);
+
+  sep = csv->sep;
+  filename = csv->filename;
+  csv->filename = NULL;
+
+  csv_file_reset(csv);
+
+  csv->sep = sep;
+  csv->filename = filename;
+
+  return (csv_file_load(csv) != NULL) ? RET_OK : RET_FAIL;
 }

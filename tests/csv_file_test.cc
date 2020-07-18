@@ -215,3 +215,18 @@ TEST(csv_file, set) {
 
   csv_file_destroy(csv);
 }
+
+TEST(csv_file, reload) {
+  csv_file_t* csv = csv_file_create("tests/test.csv", ',');
+  ASSERT_EQ(csv_file_get_rows(csv), 3);
+  ASSERT_EQ(csv_file_get_cols(csv), 3);
+  ASSERT_EQ(csv->has_title, FALSE);
+
+  ASSERT_EQ(csv_file_append_row(csv, "31,32,33"), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 4);
+  
+  ASSERT_EQ(csv_file_reload(csv), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 3);
+
+  csv_file_destroy(csv);
+}
