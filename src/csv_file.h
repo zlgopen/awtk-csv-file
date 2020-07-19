@@ -39,7 +39,7 @@ typedef struct _csv_rows_t {
 } csv_rows_t;
 
 /**
- *@class csv_file_t
+ * @class csv_file_t
  * 操作CSV文件。
  */
 typedef struct _csv_file_t {
@@ -205,6 +205,30 @@ ret_t csv_file_insert_row(csv_file_t* csv, uint32_t row, const char* data);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t csv_file_save(csv_file_t* csv, const char* filename);
+
+/**
+ * @method csv_file_clear
+ *
+ * 保存。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} filename 文件名。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_clear(csv_file_t* csv);
+
+/**
+ * @method csv_file_load_file
+ *
+ * 保存。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} filename 文件名。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_load_file(csv_file_t* csv, const char* filename);
 
 /**
  * @method csv_file_destroy

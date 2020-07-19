@@ -269,7 +269,7 @@ ret_t csv_rows_remove(csv_rows_t* rows, uint32_t row) {
   for (i = row; i < rows->size; i++) {
     r[i] = r[i + 1];
   }
-  rows->size++;
+  rows->size--;
 
   return RET_OK;
 }
@@ -565,7 +565,9 @@ ret_t csv_file_save(csv_file_t* csv, const char* filename) {
   uint32_t i = 0;
   csv_row_t* r = NULL;
   fs_file_t* f = NULL;
-  return_value_if_fail(csv != NULL && filename != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
+  filename = filename != NULL ? filename : csv->filename;
+  return_value_if_fail(filename != NULL, RET_BAD_PARAMS);
   return_value_if_fail(str_init(&str, 512) != NULL, RET_OOM);
 
   f = fs_open_file(os_fs(), filename, "wb+");
@@ -578,6 +580,11 @@ ret_t csv_file_save(csv_file_t* csv, const char* filename) {
       ENSURE(fs_file_write(f, str.str, str.size) == str.size);
     }
     fs_file_close(f);
+
+    if (csv->filename != filename) {
+      TKMEM_FREE(csv->filename);
+      csv->filename = tk_strdup(filename);
+    }
   }
   str_reset(&str);
 
@@ -632,6 +639,26 @@ ret_t csv_file_reload(csv_file_t* csv) {
 
   csv->sep = sep;
   csv->filename = filename;
+
+  return (csv_file_load(csv) != NULL) ? RET_OK : RET_FAIL;
+}
+
+ret_t csv_file_clear(csv_file_t* csv) {
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
+
+  csv->rows.size = 0;
+
+  return RET_OK;
+}
+
+ret_t csv_file_load_file(csv_file_t* csv, const char* filename) {
+  char sep = ',';
+  return_value_if_fail(csv != NULL && filename != NULL, RET_BAD_PARAMS);
+
+  sep = csv->sep;
+  csv_file_reset(csv);
+  csv->sep = sep;
+  csv->filename = tk_strdup(filename);
 
   return (csv_file_load(csv) != NULL) ? RET_OK : RET_FAIL;
 }
