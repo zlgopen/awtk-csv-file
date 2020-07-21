@@ -83,7 +83,7 @@ TEST(csv_file_object, title ) {
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_ADD, "31,32,33"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
   
-  ASSERT_EQ(object_exec(obj, OBJECT_CMD_SAVE, "test1.csv"), RET_OK);
+  ASSERT_NE(object_exec(obj, OBJECT_CMD_SAVE, "test1.csv"), RET_OK);
   
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE, "0"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 1);

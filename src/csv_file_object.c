@@ -39,8 +39,8 @@ static csv_file_object_t* csv_file_object_cast(object_t* obj);
 #define CSV_FILE_OBJECT(obj) csv_file_object_cast((object_t*)obj)
 
 typedef struct _csv_path_t {
-  uint32_t row;
-  uint32_t col;
+  int32_t row;
+  int32_t col;
 } csv_path_t;
 
 static ret_t csv_path_parse(csv_path_t* path, csv_file_t* csv, const char* name) {
@@ -67,7 +67,12 @@ static ret_t csv_path_parse(csv_path_t* path, csv_file_t* csv, const char* name)
     path->col = tk_atoi(p + 1);
   } else {
     path->col = csv_file_get_col_of_name(csv, p);
+    if (path->col < 0) {
+      path->col = tk_atoi(p);
+    }
   }
+  return_value_if_fail((path->col >= 0) && (path->col < csv_file_get_cols(csv)), RET_BAD_PARAMS);
+  return_value_if_fail((path->row >= 0) && (path->row < csv_file_get_rows(csv)), RET_BAD_PARAMS);
 
   return RET_OK;
 }
@@ -136,7 +141,7 @@ static ret_t csv_file_object_exec(object_t* obj, const char* name, const char* a
   return_value_if_fail(o != NULL, RET_BAD_PARAMS);
 
   if (tk_str_ieq(name, OBJECT_CMD_SAVE)) {
-    ret = csv_file_save(o->csv, args);
+    ret = csv_file_save(o->csv, NULL);
   } else if (tk_str_ieq(name, OBJECT_CMD_RELOAD)) {
     csv_file_reload(o->csv);
     ret = RET_ITEMS_CHANGED;
