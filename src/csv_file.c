@@ -516,6 +516,24 @@ uint32_t csv_file_get_rows(csv_file_t* csv) {
   return csv->rows.size;
 }
 
+uint32_t csv_file_get_checked_rows(csv_file_t* csv) {
+  uint32_t i = 0;
+  uint32_t nr = 0;
+  csv_row_t* r = NULL;
+  csv_rows_t* rows = NULL;
+  return_value_if_fail(csv != NULL, 0);
+
+  rows = &(csv->rows);
+  for (i = 0; i < rows->size; i++) {
+    r = rows->rows + i;
+    if (r->checked) {
+      nr++;
+    }
+  }
+
+  return nr;
+}
+
 uint32_t csv_file_get_cols(csv_file_t* csv) {
   return_value_if_fail(csv != NULL, 0);
 

@@ -231,3 +231,10 @@ object_t* csv_file_object_create(csv_file_t* csv) {
 
   return obj;
 }
+
+csv_file_t* csv_file_object_get_csv(object_t* obj) {
+  csv_file_object_t* o = CSV_FILE_OBJECT(obj);
+  return_value_if_fail(o != NULL, NULL);
+
+  return o->csv;
+}

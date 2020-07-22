@@ -130,6 +130,7 @@ TEST(csv_file_object, checked) {
   
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE_CHECKED, NULL), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 0);
-  
+  ASSERT_EQ(csv_file_object_get_csv(obj), csv);
+
   OBJECT_UNREF(obj);
 }

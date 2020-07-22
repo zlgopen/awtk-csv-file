@@ -45,6 +45,17 @@ BEGIN_C_DECLS
  */
 object_t* csv_file_object_create(csv_file_t* csv);
 
+/**
+ * @method csv_file_object_get_csv
+ *
+ * 获取csv对象。
+ *
+ * @param {object_t*} obj obj对象。
+ * 
+ * @return {csv_file_t*} 返回csv对象。
+ */
+csv_file_t* csv_file_object_get_csv(object_t* obj);
+
 END_C_DECLS
 
 #endif /*TK_CSV_FILE_OBJECT_H*/

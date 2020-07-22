@@ -184,6 +184,17 @@ const char* csv_file_get_title(csv_file_t* csv);
 uint32_t csv_file_get_rows(csv_file_t* csv);
 
 /**
+ * @method csv_file_get_checked_rows
+ *
+ * 获取checked行数(包括标题)。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * 
+ * @return {uint32_t} 返回checked行数。
+ */
+uint32_t csv_file_get_checked_rows(csv_file_t* csv);
+
+/**
  * @method csv_file_get_cols
  *
  * 获取列数。

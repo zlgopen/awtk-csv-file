@@ -236,15 +236,19 @@ TEST(csv_file, checked) {
   csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
   ASSERT_EQ(csv_file_get_rows(csv), 5);
 
+  ASSERT_EQ(csv_file_get_checked_rows(csv), 0);
   ASSERT_EQ(csv_file_set_row_checked(csv, 0, TRUE), RET_OK);
   ASSERT_EQ(csv_file_is_row_checked(csv, 0), TRUE);
+  ASSERT_EQ(csv_file_get_checked_rows(csv), 1);
   
   ASSERT_EQ(csv_file_set_row_checked(csv, 2, TRUE), RET_OK);
   ASSERT_EQ(csv_file_is_row_checked(csv, 2), TRUE);
+  ASSERT_EQ(csv_file_get_checked_rows(csv), 2);
   
   ASSERT_EQ(csv_file_set_row_checked(csv, 4, TRUE), RET_OK);
   ASSERT_EQ(csv_file_is_row_checked(csv, 4), TRUE);
-  
+  ASSERT_EQ(csv_file_get_checked_rows(csv), 3);
+
   ASSERT_EQ(csv_file_remove_checked_rows(csv), RET_OK);
   ASSERT_EQ(csv_file_get_rows(csv), 2);
   
