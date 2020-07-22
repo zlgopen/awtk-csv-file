@@ -142,7 +142,7 @@ static bool_t csv_file_object_can_exec(object_t* obj, const char* name, const ch
   } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE)) {
     return TRUE;
   } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE_CHECKED)) {
-    return TRUE;
+    return csv_file_get_checked_rows(o->csv) > 0;
   } else if (tk_str_ieq(name, OBJECT_CMD_ADD)) {
     return TRUE;
   }
