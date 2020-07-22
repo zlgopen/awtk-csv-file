@@ -265,6 +265,8 @@ ret_t csv_rows_remove(csv_rows_t* rows, uint32_t row) {
   csv_row_t* r = NULL;
   return_value_if_fail(rows != NULL && row < rows->size, RET_BAD_PARAMS);
 
+  csv_row_reset(rows->rows + row);
+
   r = rows->rows;
   for (i = row; i < rows->size; i++) {
     r[i] = r[i + 1];
@@ -526,6 +528,44 @@ ret_t csv_file_set(csv_file_t* csv, uint32_t row, uint32_t col, const char* valu
   return_value_if_fail(col < csv_file_get_cols(csv), RET_BAD_PARAMS);
 
   return csv_row_set(r, col, value);
+}
+
+ret_t csv_file_set_row_checked(csv_file_t* csv, uint32_t row, bool_t checked) {
+  csv_row_t* r = csv_file_get_row(csv, row);
+  return_value_if_fail(r != NULL, RET_BAD_PARAMS);
+
+  r->checked = checked;
+
+  return RET_OK;
+}
+
+bool_t csv_file_is_row_checked(csv_file_t* csv, uint32_t row) {
+  csv_row_t* r = csv_file_get_row(csv, row);
+  return_value_if_fail(r != NULL, FALSE);
+
+  return r->checked;
+}
+
+ret_t csv_file_remove_checked_rows(csv_file_t* csv) {
+  uint32_t i = 0;
+  uint32_t d = 0;
+  csv_row_t* r = NULL;
+  csv_rows_t* rows = NULL;
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
+
+  rows = &(csv->rows);
+  for (i = 0; i < rows->size; i++) {
+    r = rows->rows + i;
+    if (r->checked) {
+      csv_row_reset(r);
+    } else {
+      rows->rows[d++] = rows->rows[i];
+    }
+  }
+
+  rows->size = d;
+
+  return RET_OK;
 }
 
 csv_row_t* csv_file_get_row(csv_file_t* csv, uint32_t row) {

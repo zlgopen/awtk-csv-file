@@ -28,7 +28,8 @@ BEGIN_C_DECLS
 
 typedef struct _csv_row_t {
   char* buff;
-  uint32_t size : 31;
+  uint32_t size : 30;
+  uint32_t checked : 1;
   uint32_t should_free_buff : 1;
 } csv_row_t;
 
@@ -123,6 +124,42 @@ const char* csv_file_get(csv_file_t* csv, uint32_t row, uint32_t col);
  * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
  */
 ret_t csv_file_set(csv_file_t* csv, uint32_t row, uint32_t col, const char* value);
+
+/**
+ * @method csv_file_set_row_checked
+ *
+ * 勾选指定行。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {uint32_t} row 行号。
+ * @param {bool_t} checked 是否勾选。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_set_row_checked(csv_file_t* csv, uint32_t row, bool_t checked);
+
+/**
+ * @method csv_file_is_row_checked
+ *
+ * 判断指定行是否勾选。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {uint32_t} row 行号。
+ * 
+ * @return {bool_t} 返回TRUE表示勾选，否则表示没勾选。
+ */
+bool_t csv_file_is_row_checked(csv_file_t* csv, uint32_t row);
+
+/**
+ * @method csv_file_remove_checked_rows
+ *
+ * 删除全部勾选的行。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_remove_checked_rows(csv_file_t* csv);
 
 /**
  * @method csv_file_get_title

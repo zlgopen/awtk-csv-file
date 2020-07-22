@@ -230,3 +230,41 @@ TEST(csv_file, reload) {
 
   csv_file_destroy(csv);
 }
+
+TEST(csv_file, checked) {
+  const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43\n";
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  ASSERT_EQ(csv_file_get_rows(csv), 5);
+
+  ASSERT_EQ(csv_file_set_row_checked(csv, 0, TRUE), RET_OK);
+  ASSERT_EQ(csv_file_is_row_checked(csv, 0), TRUE);
+  
+  ASSERT_EQ(csv_file_set_row_checked(csv, 2, TRUE), RET_OK);
+  ASSERT_EQ(csv_file_is_row_checked(csv, 2), TRUE);
+  
+  ASSERT_EQ(csv_file_set_row_checked(csv, 4, TRUE), RET_OK);
+  ASSERT_EQ(csv_file_is_row_checked(csv, 4), TRUE);
+  
+  ASSERT_EQ(csv_file_remove_checked_rows(csv), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 2);
+  
+  ASSERT_STREQ(csv_file_get(csv, 0, 0), "11");
+  ASSERT_STREQ(csv_file_get(csv, 0, 1), "12");
+  ASSERT_STREQ(csv_file_get(csv, 0, 2), "13");
+  
+  ASSERT_STREQ(csv_file_get(csv, 1, 0), "31");
+  ASSERT_STREQ(csv_file_get(csv, 1, 1), "32");
+  ASSERT_STREQ(csv_file_get(csv, 1, 2), "33");
+  
+  ASSERT_EQ(csv_file_set_row_checked(csv, 0, TRUE), RET_OK);
+  ASSERT_EQ(csv_file_is_row_checked(csv, 0), TRUE);
+  
+  ASSERT_EQ(csv_file_set_row_checked(csv, 1, TRUE), RET_OK);
+  ASSERT_EQ(csv_file_is_row_checked(csv, 1), TRUE);
+  
+  ASSERT_EQ(csv_file_remove_checked_rows(csv), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 0);
+
+  csv_file_destroy(csv);
+}
+

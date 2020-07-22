@@ -77,20 +77,59 @@ TEST(csv_file_object, title ) {
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_ADD, "21,22,23"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
   
-  ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE, "0"), RET_OK);
+  ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE, "[0]"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 1);
   
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_ADD, "31,32,33"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
   
-  ASSERT_NE(object_exec(obj, OBJECT_CMD_SAVE, "test1.csv"), RET_OK);
+  ASSERT_EQ(object_exec(obj, OBJECT_CMD_SAVE, "test1.csv"), RET_OK);
   
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE, "0"), RET_OK);
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 1);
   
   ASSERT_EQ(object_exec(obj, OBJECT_CMD_RELOAD, NULL), RET_OK);
-  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 1);
 
   OBJECT_UNREF(obj);
 }
 
+TEST(csv_file_object, checked) {
+  const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43";
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  object_t* obj = csv_file_object_create(csv);
+
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 5);
+  ASSERT_EQ(object_set_prop_bool(obj, "[0].checked", TRUE), RET_OK);
+  ASSERT_EQ(object_get_prop_bool(obj, "[0].checked", FALSE), TRUE);
+
+  ASSERT_EQ(object_set_prop_bool(obj, "[2].checked", TRUE), RET_OK);
+  ASSERT_EQ(object_get_prop_bool(obj, "[2].checked", FALSE), TRUE);
+
+  ASSERT_EQ(object_set_prop_bool(obj, "[4].checked", TRUE), RET_OK);
+  ASSERT_EQ(object_get_prop_bool(obj, "[4].checked", FALSE), TRUE);
+  
+  ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE_CHECKED, NULL), RET_OK);
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].0"), "11");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].1"), "12");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].2"), "13");
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].0"), "31");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].1"), "32");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].2"), "33");
+  
+  ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE_CHECKED, NULL), RET_OK);
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
+
+  ASSERT_EQ(object_set_prop_bool(obj, "[0].checked", TRUE), RET_OK);
+  ASSERT_EQ(object_get_prop_bool(obj, "[0].checked", FALSE), TRUE);
+  ASSERT_EQ(object_set_prop_bool(obj, "[1].checked", TRUE), RET_OK);
+  ASSERT_EQ(object_get_prop_bool(obj, "[1].checked", FALSE), TRUE);
+  
+  ASSERT_EQ(object_exec(obj, OBJECT_CMD_REMOVE_CHECKED, NULL), RET_OK);
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 0);
+  
+  OBJECT_UNREF(obj);
+}

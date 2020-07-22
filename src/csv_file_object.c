@@ -25,8 +25,6 @@
 #include "tkc/object.h"
 #include "csv_file.h"
 
-#define NAME_SIZE "#size"
-
 typedef struct _csv_file_object_t {
   object_t object;
 
@@ -41,15 +39,12 @@ static csv_file_object_t* csv_file_object_cast(object_t* obj);
 typedef struct _csv_path_t {
   int32_t row;
   int32_t col;
+  const char* col_name;
 } csv_path_t;
 
 static ret_t csv_path_parse(csv_path_t* path, csv_file_t* csv, const char* name) {
   const char* p = name;
   memset(path, 0x00, sizeof(*path));
-
-  if (tk_str_ieq(name, NAME_SIZE)) {
-    return RET_OK;
-  }
 
   while (*p && *p != '[') p++;
   return_value_if_fail(*p == '[', RET_FAIL);
@@ -61,6 +56,12 @@ static ret_t csv_path_parse(csv_path_t* path, csv_file_t* csv, const char* name)
     return RET_OK;
   } else {
     p++;
+  }
+
+  if (tk_str_eq(p, OBJECT_PROP_CHECKED)) {
+    path->col_name = p;
+
+    return RET_OK;
   }
 
   if (*p == '[') {
@@ -92,6 +93,10 @@ static ret_t csv_file_object_set_prop(object_t* obj, const char* name, const val
   return_value_if_fail(o != NULL, RET_BAD_PARAMS);
   return_value_if_fail(csv_path_parse(&p, o->csv, name) == RET_OK, RET_FAIL);
 
+  if (p.col_name != NULL && tk_str_ieq(p.col_name, OBJECT_PROP_CHECKED)) {
+    return csv_file_set_row_checked(o->csv, p.row, value_bool(v));
+  }
+
   str_from_value(&(o->str), v);
   return csv_file_set(o->csv, p.row, p.col, o->str.str);
 }
@@ -101,10 +106,18 @@ static ret_t csv_file_object_get_prop(object_t* obj, const char* name, value_t* 
   const char* str = NULL;
   csv_file_object_t* o = CSV_FILE_OBJECT(obj);
   return_value_if_fail(o != NULL, RET_BAD_PARAMS);
+
+  if (tk_str_ieq(name, OBJECT_PROP_SIZE)) {
+    value_set_int(v, csv_file_get_rows(o->csv));
+    return RET_OK;
+  }
+
   return_value_if_fail(csv_path_parse(&p, o->csv, name) == RET_OK, RET_FAIL);
 
-  if (tk_str_ieq(name, NAME_SIZE)) {
-    value_set_int(v, csv_file_get_rows(o->csv));
+  if (p.col_name != NULL && tk_str_ieq(p.col_name, OBJECT_PROP_CHECKED)) {
+    return_value_if_fail(p.row < csv_file_get_rows(o->csv), RET_FAIL);
+
+    value_set_bool(v, csv_file_is_row_checked(o->csv, p.row));
     return RET_OK;
   }
 
@@ -128,6 +141,8 @@ static bool_t csv_file_object_can_exec(object_t* obj, const char* name, const ch
     return TRUE;
   } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE)) {
     return TRUE;
+  } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE_CHECKED)) {
+    return TRUE;
   } else if (tk_str_ieq(name, OBJECT_CMD_ADD)) {
     return TRUE;
   }
@@ -149,8 +164,16 @@ static ret_t csv_file_object_exec(object_t* obj, const char* name, const char* a
     csv_file_clear(o->csv);
     ret = RET_ITEMS_CHANGED;
   } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE)) {
-    return_value_if_fail(args != NULL, RET_FAIL);
-    ret = csv_file_remove_row(o->csv, tk_atoi(args)) == RET_OK ? RET_ITEMS_CHANGED : RET_FAIL;
+    const char* index = strrchr(args, '[');
+    if (index != NULL) {
+      index++;
+    } else {
+      index = args;
+    }
+    return_value_if_fail(index != NULL, RET_FAIL);
+    ret = csv_file_remove_row(o->csv, tk_atoi(index)) == RET_OK ? RET_ITEMS_CHANGED : RET_FAIL;
+  } else if (tk_str_ieq(name, OBJECT_CMD_REMOVE_CHECKED)) {
+    ret = csv_file_remove_checked_rows(o->csv) == RET_OK ? RET_ITEMS_CHANGED : RET_FAIL;
   } else if (tk_str_ieq(name, OBJECT_CMD_ADD)) {
     return_value_if_fail(args != NULL, RET_FAIL);
     ret = csv_file_append_row(o->csv, args) == RET_OK ? RET_ITEMS_CHANGED : RET_FAIL;
