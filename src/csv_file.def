@@ -1,0 +1,23 @@
+LIBRARY   csv_file
+EXPORTS
+    csv_file_create @1
+    csv_file_reload @2
+    csv_file_create_with_buff @3
+    csv_file_get @4
+    csv_file_set @5
+    csv_file_set_row_checked @6
+    csv_file_is_row_checked @7
+    csv_file_remove_checked_rows @8
+    csv_file_get_title @9
+    csv_file_get_rows @10
+    csv_file_get_checked_rows @11
+    csv_file_get_cols @12
+    csv_file_remove_row @13
+    csv_file_append_row @14
+    csv_file_insert_row @15
+    csv_file_save @16
+    csv_file_clear @17
+    csv_file_load_file @18
+    csv_file_destroy @19
+    csv_file_object_create @20
+    csv_file_object_get_csv @21

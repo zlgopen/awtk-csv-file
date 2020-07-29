@@ -1,49 +1,9 @@
-import os
-import sys
-import platform
+﻿import os
+import app_helper as app
 
-sys.path.insert(0, '../awtk/')
-#sys.path.insert(0, '../awtk-linux-fb/')
-import awtk_config as awtk
+helper = app.Helper(ARGUMENTS);
+helper.set_dll_def('src/csv_file.def').set_libs(['csv']).call(DefaultEnvironment)
 
-APP_ROOT    = os.path.normpath(os.getcwd())
-APP_BIN_DIR = os.path.join(APP_ROOT, 'bin')
-APP_LIB_DIR = os.path.join(APP_ROOT, 'lib')
-APP_SRC_DIR = os.path.join(APP_ROOT, 'src')
-
-os.environ['APP_ROOT'] = APP_ROOT;
-os.environ['BIN_DIR'] = APP_BIN_DIR;
-os.environ['LIB_DIR'] = APP_LIB_DIR;
-
-APP_CCFLAGS = ''
-APP_LINKFLAGS=''
-APP_LIBPATH = [APP_LIB_DIR]
-APP_LIBS = ['csv']
-APP_CPPPATH=[APP_SRC_DIR]
-
-if hasattr(awtk, 'CC'):
-  DefaultEnvironment(
-    CC=awtk.CC,
-    CXX=awtk.CXX,
-    LD=awtk.LD,
-    AR=awtk.AR,
-    STRIP=awtk.STRIP,
-    CPPPATH   = awtk.CPPPATH + APP_CPPPATH,
-    LINKFLAGS = awtk.LINKFLAGS + APP_LINKFLAGS,
-    LIBS      = APP_LIBS + awtk.LIBS,
-    LIBPATH   = APP_LIBPATH + awtk.LIBPATH,
-    CCFLAGS   = APP_CCFLAGS + awtk.CCFLAGS, 
-    OS_SUBSYSTEM_CONSOLE=awtk.OS_SUBSYSTEM_CONSOLE,
-    OS_SUBSYSTEM_WINDOWS=awtk.OS_SUBSYSTEM_WINDOWS)
-else:
-  DefaultEnvironment(
-    CPPPATH   = awtk.CPPPATH + APP_CPPPATH,
-    LINKFLAGS = awtk.LINKFLAGS + APP_LINKFLAGS,
-    LIBS      = APP_LIBS + awtk.LIBS,
-    LIBPATH   = APP_LIBPATH + awtk.LIBPATH,
-    CCFLAGS   = APP_CCFLAGS + awtk.CCFLAGS, 
-    OS_SUBSYSTEM_CONSOLE=awtk.OS_SUBSYSTEM_CONSOLE,
-    OS_SUBSYSTEM_WINDOWS=awtk.OS_SUBSYSTEM_WINDOWS)
-
-SConscript(['src/SConscript', 'demos/SConscript', 'tests/SConscript'])
-
+CustomWidgetSConscriptFiles = []
+SConscriptFiles = CustomWidgetSConscriptFiles + ['src/SConscript', 'demos/SConscript', 'tests/SConscript']
+SConscript(SConscriptFiles)
