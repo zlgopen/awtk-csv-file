@@ -5,6 +5,58 @@
       {
         "params": [
           {
+            "type": "char",
+            "name": "sep",
+            "desc": "分隔符。"
+          },
+          {
+            "type": "csv_file_filter_t",
+            "name": "filter",
+            "desc": "过滤函数。"
+          },
+          {
+            "type": "void*",
+            "name": "ctx",
+            "desc": "过滤函数的上下文。"
+          }
+        ],
+        "annotation": {},
+        "desc": "创建空的csv对象。",
+        "name": "csv_file_create_empty",
+        "return": {
+          "type": "csv_file_t*",
+          "desc": "返回csv对象。"
+        }
+      },
+      {
+        "params": [
+          {
+            "type": "csv_file_t*",
+            "name": "csv",
+            "desc": "csv对象。"
+          },
+          {
+            "type": "csv_file_filter_t",
+            "name": "filter",
+            "desc": "过滤函数。"
+          },
+          {
+            "type": "void*",
+            "name": "ctx",
+            "desc": "过滤函数的上下文。"
+          }
+        ],
+        "annotation": {},
+        "desc": "设置过滤函数。",
+        "name": "csv_file_set_filter",
+        "return": {
+          "type": "ret_t",
+          "desc": "返回RET_OK表示成功，否则表示失败。"
+        }
+      },
+      {
+        "params": [
+          {
             "type": "const char*",
             "name": "filename",
             "desc": "文件名。"
@@ -19,24 +71,8 @@
         "desc": "根据文件创建csv对象。",
         "name": "csv_file_create",
         "return": {
-          "type": "csv_file_t",
+          "type": "csv_file_t*",
           "desc": "返回csv对象。"
-        }
-      },
-      {
-        "params": [
-          {
-            "type": "csv_file_t*",
-            "name": "csv",
-            "desc": "csv对象。"
-          }
-        ],
-        "annotation": {},
-        "desc": "丢弃内存中的修改，重新加载文件。",
-        "name": "csv_file_reload",
-        "return": {
-          "type": "ret_t",
-          "desc": "返回RET_OK表示成功，否则表示失败。"
         }
       },
       {
@@ -52,11 +88,6 @@
             "desc": "数据长度。"
           },
           {
-            "type": "bool_t",
-            "name": "",
-            "desc": "。"
-          },
-          {
             "type": "char",
             "name": "sep",
             "desc": "分隔符。"
@@ -68,6 +99,69 @@
         "return": {
           "type": "csv_file_t",
           "desc": "返回csv对象。"
+        }
+      },
+      {
+        "params": [
+          {
+            "type": "csv_file_t*",
+            "name": "csv",
+            "desc": "csv对象。"
+          },
+          {
+            "type": "const char*",
+            "name": "filename",
+            "desc": "文件名。"
+          }
+        ],
+        "annotation": {},
+        "desc": "从文件加载csv。",
+        "name": "csv_file_load_file",
+        "return": {
+          "type": "ret_t",
+          "desc": "返回RET_OK表示成功，否则表示失败。"
+        }
+      },
+      {
+        "params": [
+          {
+            "type": "csv_file_t*",
+            "name": "csv",
+            "desc": "csv对象。"
+          },
+          {
+            "type": "const char*",
+            "name": "buff",
+            "desc": "数据。"
+          },
+          {
+            "type": "uint32_t",
+            "name": "size",
+            "desc": "数据长度。"
+          }
+        ],
+        "annotation": {},
+        "desc": "从内存加载csv。",
+        "name": "csv_file_load_buff",
+        "return": {
+          "type": "ret_t",
+          "desc": "返回RET_OK表示成功，否则表示失败。"
+        }
+      },
+      {
+        "params": [
+          {
+            "type": "csv_file_t*",
+            "name": "csv",
+            "desc": "csv对象。"
+          }
+        ],
+        "annotation": {},
+        "desc": "丢弃内存中的修改，重新加载当前文件。",
+        "name": "csv_file_reload",
+        "return": {
+          "type": "ret_t",
+          "desc": "返回RET_OK表示成功，否则表示失败。"
         }
       },
       {

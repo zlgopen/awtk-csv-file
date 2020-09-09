@@ -19,15 +19,19 @@
  *
  */
 
-#include "csv_file.h"
 #include "tkc/mem.h"
 #include "tkc/utils.h"
-#include "tkc/fs.h"
+
+#include "csv_file.h"
+#include "streams/mem/istream_mem.h"
+#include "streams/file/istream_file.h"
 
 static const uint8_t s_utf8_bom[3] = {0xEF, 0xBB, 0xBF};
 
-static csv_file_t* csv_file_parse(csv_file_t* csv);
+ret_t csv_file_reset(csv_file_t* csv);
+ret_t csv_file_clear(csv_file_t* csv);
 static ret_t csv_rows_extend_rows(csv_rows_t* rows, uint32_t delta);
+static csv_file_t* csv_file_load_input(csv_file_t* csv, tk_istream_t* input);
 
 const char* csv_row_get(csv_row_t* row, uint32_t col) {
   uint32_t i = 0;
@@ -334,148 +338,72 @@ ret_t csv_rows_init(csv_rows_t* rows, uint32_t init_capacity) {
   return rows->rows != NULL ? RET_OK : RET_OOM;
 }
 
-csv_file_t* csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size,
-                               bool_t should_free);
-
 csv_file_t* csv_file_load(csv_file_t* csv) {
-  uint32_t size = 0;
-  void* buff = NULL;
+  tk_istream_t* input = NULL;
   return_value_if_fail(csv != NULL && csv->filename != NULL, NULL);
 
-  buff = file_read(csv->filename, &size);
-  return_value_if_fail(buff != NULL, NULL);
-
-  return csv_file_load_buff(csv, buff, size, TRUE);
-}
-
-csv_file_t* csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size,
-                               bool_t should_free) {
-  csv_file_t* ret = csv;
-  const char* org_buff = buff;
-  return_value_if_fail(buff != NULL, NULL);
-
-  if (memcmp(buff, s_utf8_bom, sizeof(s_utf8_bom)) == 0) {
-    buff += sizeof(s_utf8_bom);
-    size -= sizeof(s_utf8_bom);
-    log_debug("skip UTF-8 BOM\n");
-  }
-
-  csv->size = size;
-  if (!should_free) {
-    csv->buff = TKMEM_ALLOC(size + 1);
-    if (csv->buff == NULL) {
-      TKMEM_FREE(csv);
-    }
-    return_value_if_fail(csv != NULL, NULL);
-    memcpy(csv->buff, buff, size);
-    csv->buff[size] = '\0';
-    org_buff = csv->buff;
-
-    ret = csv_file_parse(csv);
-  } else {
-    csv->buff = (char*)buff;
-    ret = csv_file_parse(csv);
-    csv->buff = (char*)org_buff;
-  }
-
-  return ret;
-}
-
-csv_file_t* csv_file_create(const char* filename, char sep) {
-  csv_file_t* csv = NULL;
-  return_value_if_fail(filename != NULL, NULL);
-  csv = TKMEM_ZALLOC(csv_file_t);
-  return_value_if_fail(csv != NULL, NULL);
-
-  csv->sep = sep;
-  csv->filename = tk_strdup(filename);
-  if (csv_file_load(csv) == NULL) {
-    TKMEM_FREE(csv->filename);
-    TKMEM_FREE(csv);
-  }
+  input = tk_istream_file_create(csv->filename);
+  return_value_if_fail(input != NULL, NULL);
+  csv_file_load_input(csv, input);
+  OBJECT_UNREF(input);
 
   return csv;
 }
 
-csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
-                                      char sep) {
-  csv_file_t* csv = NULL;
-  return_value_if_fail(buff != NULL && size > 0, NULL);
-  csv = TKMEM_ZALLOC(csv_file_t);
-
-  if (csv == NULL) {
-    if (should_free) {
-      TKMEM_FREE(buff);
-    }
-    return NULL;
-  }
-
-  csv->sep = sep;
-  if (csv_file_load_buff(csv, buff, size, should_free) == NULL) {
-    TKMEM_FREE(csv);
-  }
-
-  return csv;
-}
-
-static uint32_t csv_file_count_rows(csv_file_t* csv) {
-  uint32_t i = 0;
-  uint32_t rows = 0;
-  const char* p = csv->buff;
-
-  for (i = 0; i < csv->size; i++, p++) {
-    if (*p == '\r' || *p == '\n') {
-      rows++;
-      while ((*p == '\r' || *p == '\n') && i < csv->size) {
-        p++;
-        i++;
-      }
-    }
-  }
-
-  return rows + 1;
-}
-
-static csv_file_t* csv_file_parse(csv_file_t* csv) {
-  uint32_t i = 0;
+static csv_file_t* csv_file_load_input(csv_file_t* csv, tk_istream_t* input) {
+  str_t str;
+  char* p = NULL;
+  uint32_t index = 0;
   csv_row_t* r = NULL;
-  char* p = csv->buff;
   char sep = csv->sep;
-  uint32_t rows = csv_file_count_rows(csv);
-  return_value_if_fail(csv_rows_init(&(csv->rows), rows) == RET_OK, NULL);
 
-  r = csv_rows_append(&(csv->rows));
-  return_value_if_fail(r != NULL, NULL);
-
-  r->buff = p;
-  for (i = 0; i < csv->size; i++, p++) {
-    if (*p == '\r' || *p == '\n') {
-      r->size = p - r->buff + 1;
-      while ((*p == '\r' || *p == '\n' || *p == '\0') && i < csv->size) {
-        *p = '\0';
-        p++;
-        i++;
+  str_init(&str, 2048);
+  while (tk_istream_read_line_str(input, &str) == RET_OK) {
+    p = str.str;
+    if (csv->rows.size == 0) {
+      if (memcmp(p, s_utf8_bom, sizeof(s_utf8_bom)) == 0) {
+        p += sizeof(s_utf8_bom);
+        log_debug("skip utf-8 bom\n");
       }
-
-      csv_row_parse(r, sep);
-      r = csv_rows_append(&(csv->rows));
-      return_value_if_fail(r != NULL, NULL);
-      r->buff = p;
     }
-  }
 
-  if (r->size == 0) {
-    r->size = p - r->buff + 1;
-    if (r->size <= 2 && *r->buff == '\0') {
-      csv->rows.size--;
+    /*skip malformed data*/
+    while ((p - str.str) < str.size) {
+      if (*p == '\0') {
+        p++;
+      } else {
+        break;
+      }
     }
+
+    if (*p == '\0') {
+      log_debug("skip empty line\n");
+      continue;
+    }
+
+    r = csv_rows_append(&(csv->rows));
+    return_value_if_fail(r != NULL, NULL);
+    return_value_if_fail(csv_row_init(r, tk_strdup(p), str.size + 1, TRUE) == RET_OK, NULL);
     csv_row_parse(r, sep);
+
+    if (csv->filter != NULL) {
+      ret_t ret = csv->filter(csv->filter_ctx, csv, index, r);
+      if (ret == RET_STOP) {
+        break;
+      } else if (ret == RET_FAIL) {
+        csv_row_reset(r);
+        csv->rows.size--;
+      }
+    }
+
+    index++;
   }
 
   r = csv_file_get_row(csv, 0);
   if (r != NULL) {
     uint32_t cols1 = 0;
     uint32_t cols0 = csv_row_count_cols(r);
+
     if (cols0 == 1) {
       r = csv_file_get_row(csv, 1);
       cols1 = csv_row_count_cols(r);
@@ -486,6 +414,72 @@ static csv_file_t* csv_file_parse(csv_file_t* csv) {
     } else {
       csv->cols = csv_row_count_cols(r);
     }
+  }
+
+  return csv;
+}
+
+csv_file_t* csv_file_create_empty(char sep, csv_file_filter_t filter, void* ctx) {
+  csv_file_t* csv = TKMEM_ZALLOC(csv_file_t);
+  return_value_if_fail(csv != NULL, NULL);
+
+  if (csv_rows_init(&(csv->rows), 100) == RET_OK) {
+    csv->sep = sep;
+    csv->filter = filter;
+    csv->filter_ctx = ctx;
+  } else {
+    TKMEM_FREE(csv);
+  }
+
+  return csv;
+}
+
+ret_t csv_file_set_filter(csv_file_t* csv, csv_file_filter_t filter, void* ctx) {
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
+
+  csv->filter = filter;
+  csv->filter_ctx = ctx;
+
+  return RET_OK;
+}
+
+csv_file_t* csv_file_create(const char* filename, char sep) {
+  csv_file_t* csv = NULL;
+  return_value_if_fail(filename != NULL, NULL);
+  csv = csv_file_create_empty(sep, NULL, NULL);
+  return_value_if_fail(csv != NULL, NULL);
+
+  if (csv_file_load_file(csv, filename) != RET_OK) {
+    csv_file_destroy(csv);
+    csv = NULL;
+  }
+
+  return csv;
+}
+
+ret_t csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size) {
+  ret_t ret = RET_OK;
+  tk_istream_t* input = NULL;
+
+  return_value_if_fail(csv != NULL && buff != NULL && size > 0, RET_BAD_PARAMS);
+  input = tk_istream_mem_create((uint8_t*)buff, size, 0, FALSE);
+  return_value_if_fail(input != NULL, RET_BAD_PARAMS);
+
+  csv_file_clear(csv);
+  ret = csv_file_load_input(csv, input) != NULL ? RET_OK : RET_FAIL;
+  OBJECT_UNREF(input);
+
+  return RET_OK;
+}
+
+csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, char sep) {
+  csv_file_t* csv = NULL;
+  csv = csv_file_create_empty(sep, NULL, NULL);
+  return_value_if_fail(csv != NULL, NULL);
+
+  if (csv_file_load_buff(csv, buff, size) != RET_OK) {
+    csv_file_destroy(csv);
+    csv = NULL;
   }
 
   return csv;
@@ -659,16 +653,23 @@ const char* csv_file_get_title(csv_file_t* csv) {
   return r->buff;
 }
 
-ret_t csv_file_reset(csv_file_t* csv) {
+ret_t csv_file_clear(csv_file_t* csv) {
   uint32_t i = 0;
-  return_value_if_fail(csv != NULL && csv->buff != NULL, RET_BAD_PARAMS);
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
 
   for (i = 0; i < csv->rows.size; i++) {
     csv_row_t* r = csv->rows.rows + i;
     csv_row_reset(r);
   }
+  csv->rows.size = 0;
 
-  TKMEM_FREE(csv->buff);
+  return RET_OK;
+}
+
+ret_t csv_file_reset(csv_file_t* csv) {
+  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
+
+  csv_file_clear(csv);
   TKMEM_FREE(csv->filename);
   TKMEM_FREE(csv->rows.rows);
   memset(csv, 0x00, sizeof(*csv));
@@ -685,38 +686,18 @@ ret_t csv_file_destroy(csv_file_t* csv) {
 }
 
 ret_t csv_file_reload(csv_file_t* csv) {
-  char sep = ',';
-  char* filename = NULL;
   return_value_if_fail(csv != NULL && csv->filename != NULL, RET_BAD_PARAMS);
 
-  sep = csv->sep;
-  filename = csv->filename;
-  csv->filename = NULL;
-
-  csv_file_reset(csv);
-
-  csv->sep = sep;
-  csv->filename = filename;
+  csv_file_clear(csv);
 
   return (csv_file_load(csv) != NULL) ? RET_OK : RET_FAIL;
 }
 
-ret_t csv_file_clear(csv_file_t* csv) {
-  return_value_if_fail(csv != NULL, RET_BAD_PARAMS);
-
-  csv->rows.size = 0;
-
-  return RET_OK;
-}
-
 ret_t csv_file_load_file(csv_file_t* csv, const char* filename) {
-  char sep = ',';
   return_value_if_fail(csv != NULL && filename != NULL, RET_BAD_PARAMS);
 
-  sep = csv->sep;
-  csv_file_reset(csv);
-  csv->sep = sep;
-  csv->filename = tk_strdup(filename);
+  csv_file_clear(csv);
+  csv->filename = tk_str_copy(csv->filename, filename);
 
   return (csv_file_load(csv) != NULL) ? RET_OK : RET_FAIL;
 }

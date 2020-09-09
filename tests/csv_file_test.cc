@@ -1,5 +1,6 @@
 ﻿#include "gtest/gtest.h"
 #include "csv_file.h"
+#include "tkc/utils.h"
 
 TEST(csv_file, row) {
   csv_row_t r;
@@ -115,7 +116,7 @@ TEST(csv_file, rows1) {
 
 TEST(csv_file, basic) {
   const char* str = "11,12,13\n21,22,23";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   ASSERT_EQ(csv_file_get_rows(csv), 2);
   ASSERT_EQ(csv_file_get_cols(csv), 3);
 
@@ -132,7 +133,7 @@ TEST(csv_file, basic) {
 
 TEST(csv_file, title) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   ASSERT_EQ(csv_file_get_rows(csv), 3);
   ASSERT_EQ(csv_file_get_cols(csv), 3);
 
@@ -165,7 +166,7 @@ TEST(csv_file, title) {
 
 TEST(csv_file, modify) {
   const char* str = "aa,bb,cc\n";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   ASSERT_EQ(csv_file_get_rows(csv), 1);
   ASSERT_EQ(csv_file_get_cols(csv), 3);
   ASSERT_EQ(csv->has_title, FALSE);
@@ -181,7 +182,7 @@ TEST(csv_file, modify) {
 
 TEST(csv_file, main_title) {
   const char* str = "awtk\naa,bb,cc\n";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   ASSERT_EQ(csv_file_get_rows(csv), 2);
   ASSERT_EQ(csv_file_get_cols(csv), 3);
   ASSERT_EQ(csv->has_title, TRUE);
@@ -192,7 +193,7 @@ TEST(csv_file, main_title) {
 
 TEST(csv_file, set) {
   const char* str = "11,22,33\n";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
 
   ASSERT_STREQ(csv_file_get(csv, 0, 0), "11");
   ASSERT_EQ(csv_file_set(csv, 0, 0, "aa"), RET_OK);
@@ -233,7 +234,7 @@ TEST(csv_file, reload) {
 
 TEST(csv_file, checked) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43\n";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   ASSERT_EQ(csv_file_get_rows(csv), 5);
 
   ASSERT_EQ(csv_file_get_checked_rows(csv), 0);
@@ -272,3 +273,45 @@ TEST(csv_file, checked) {
   csv_file_destroy(csv);
 }
 
+static ret_t filter_keep_1(void* ctx, csv_file_t* csv, uint32_t index, csv_row_t* row) {
+  uint32_t i = tk_pointer_to_int(ctx);
+
+  if(index < i) {
+    return RET_FAIL;
+  } else {
+    return RET_STOP;
+  }
+}
+
+TEST(csv_file, filter_1) {
+  const char* str = "11,12,13\n21,22,23\n31,32,33";
+  csv_file_t* csv = csv_file_create_empty(',', filter_keep_1, tk_pointer_from_int(0));
+
+  ASSERT_EQ(csv_file_load_buff(csv, str, strlen(str)), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 1);
+  ASSERT_EQ(csv_file_get_cols(csv), 3);
+
+  ASSERT_STREQ(csv_file_get(csv, 0, 0), "11");
+  ASSERT_STREQ(csv_file_get(csv, 0, 1), "12");
+  ASSERT_STREQ(csv_file_get(csv, 0, 2), "13");
+
+  csv_file_set_filter(csv, filter_keep_1, tk_pointer_from_int(1));
+  ASSERT_EQ(csv_file_load_buff(csv, str, strlen(str)), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 1);
+  ASSERT_EQ(csv_file_get_cols(csv), 3);
+
+  ASSERT_STREQ(csv_file_get(csv, 0, 0), "21");
+  ASSERT_STREQ(csv_file_get(csv, 0, 1), "22");
+  ASSERT_STREQ(csv_file_get(csv, 0, 2), "23");
+  
+  csv_file_set_filter(csv, filter_keep_1, tk_pointer_from_int(2));
+  ASSERT_EQ(csv_file_load_buff(csv, str, strlen(str)), RET_OK);
+  ASSERT_EQ(csv_file_get_rows(csv), 1);
+  ASSERT_EQ(csv_file_get_cols(csv), 3);
+
+  ASSERT_STREQ(csv_file_get(csv, 0, 0), "31");
+  ASSERT_STREQ(csv_file_get(csv, 0, 1), "32");
+  ASSERT_STREQ(csv_file_get(csv, 0, 2), "33");
+
+  csv_file_destroy(csv);
+}

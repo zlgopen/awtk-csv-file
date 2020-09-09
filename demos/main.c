@@ -20,11 +20,13 @@
  */
 
 #include "csv_file.h"
+#include "tkc/platform.h"
 
 int main(int argc, char* argv[]) {
   uint32_t r = 0;
   uint32_t c = 0;
   const char* filename = argc > 1 ? argv[1] : "./demos/test.csv";
+  platform_prepare();
   csv_file_t* csv = csv_file_create(filename, ',');
   uint32_t rows = csv_file_get_rows(csv);
   uint32_t cols = csv_file_get_cols(csv); 

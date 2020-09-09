@@ -4,7 +4,7 @@
 
 TEST(csv_file_object, basic) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   object_t* obj = csv_file_object_create(csv);
 
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 3);
@@ -45,7 +45,7 @@ TEST(csv_file_object, basic) {
 
 TEST(csv_file_object, title ) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   object_t* obj = csv_file_object_create(csv);
 
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 3);
@@ -96,7 +96,7 @@ TEST(csv_file_object, title ) {
 
 TEST(csv_file_object, checked) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43";
-  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), FALSE, ',');
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   object_t* obj = csv_file_object_create(csv);
 
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 5);

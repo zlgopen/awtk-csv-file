@@ -22,7 +22,7 @@
 #ifndef TK_CSV_FILE_H
 #define TK_CSV_FILE_H
 
-#include "tkc/types_def.h"
+#include "tkc/istream.h"
 
 BEGIN_C_DECLS
 
@@ -39,26 +39,62 @@ typedef struct _csv_rows_t {
   uint32_t capacity;
 } csv_rows_t;
 
+struct _csv_file_t;
+typedef struct _csv_file_t csv_file_t;
+
+/**
+ * 返回值：
+   * RET_OK: 保留
+   * RET_STOP: 停止解析
+   * RET_FAIL: 忽略此行
+ */
+typedef ret_t (*csv_file_filter_t)(void* ctx, csv_file_t* csv, uint32_t index, csv_row_t* row);
+
 /**
  * @class csv_file_t
  * 操作CSV文件。
  */
-typedef struct _csv_file_t {
+struct _csv_file_t {
   /**
    * @property {bool_t} has_title
    * 是否有标题。
    */
   bool_t has_title;
+
   /*private*/
-  char* buff;
-  uint32_t size;
-  csv_rows_t rows;
-
-  uint32_t cols;
   char sep;
-
+  uint32_t cols;
   char* filename;
-} csv_file_t;
+  csv_rows_t rows;
+  void* filter_ctx;
+  csv_file_filter_t filter;
+};
+
+/**
+ * @method csv_file_create_empty
+ *
+ * 创建空的csv对象。
+ * 
+ * @param {char} sep 分隔符。
+ * @param {csv_file_filter_t} filter 过滤函数。
+ * @param {void*} ctx 过滤函数的上下文。
+ * 
+ * @return {csv_file_t*} 返回csv对象。
+ */
+csv_file_t* csv_file_create_empty(char sep, csv_file_filter_t filter, void* ctx);
+
+/**
+ * @method csv_file_set_filter
+ *
+ * 设置过滤函数。
+ * 
+ * @param {csv_file_t*} csv csv对象。
+ * @param {csv_file_filter_t} filter 过滤函数。
+ * @param {void*} ctx 过滤函数的上下文。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_set_filter(csv_file_t* csv, csv_file_filter_t filter, void* ctx);
 
 /**
  * @method csv_file_create
@@ -68,20 +104,9 @@ typedef struct _csv_file_t {
  * @param {const char*} filename 文件名。
  * @param {char} sep 分隔符。
  * 
- * @return {csv_file_t} 返回csv对象。
+ * @return {csv_file_t*} 返回csv对象。
  */
 csv_file_t* csv_file_create(const char* filename, char sep);
-
-/**
- * @method csv_file_reload
- *
- * 丢弃内存中的修改，重新加载文件。
- *
- * @param {csv_file_t*} csv csv对象。
- * 
- * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
- */
-ret_t csv_file_reload(csv_file_t* csv);
 
 /**
  * @method csv_file_create_with_buff
@@ -90,13 +115,47 @@ ret_t csv_file_reload(csv_file_t* csv);
  *
  * @param {const char*} buff 数据。
  * @param {uint32_t} size 数据长度。
- * @param {bool_t} 是否释放buff。
  * @param {char} sep 分隔符。
  * 
  * @return {csv_file_t} 返回csv对象。
  */
-csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, bool_t should_free,
-                                      char sep);
+csv_file_t* csv_file_create_with_buff(const char* buff, uint32_t size, char sep);
+
+/**
+ * @method csv_file_load_file
+ *
+ * 从文件加载csv。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} filename 文件名。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_load_file(csv_file_t* csv, const char* filename);
+
+/**
+ * @method csv_file_load_buff
+ *
+ * 从内存加载csv。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * @param {const char*} buff 数据。
+ * @param {uint32_t} size 数据长度。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_load_buff(csv_file_t* csv, const char* buff, uint32_t size);
+
+/**
+ * @method csv_file_reload
+ *
+ * 丢弃内存中的修改，重新加载当前文件。
+ *
+ * @param {csv_file_t*} csv csv对象。
+ * 
+ * @return {ret_t} 返回RET_OK表示成功，否则表示失败。
+ */
+ret_t csv_file_reload(csv_file_t* csv);
 
 /**
  * @method csv_file_get
