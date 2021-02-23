@@ -18,6 +18,20 @@ TEST(csv_file, row) {
   csv_row_reset(&r);
 }
 
+TEST(csv_file, csv_row_to_str) {
+  csv_row_t r;
+  str_t str;
+  str_init(&str, 0);
+  memset(&r, 0x00, sizeof(r));
+
+  ASSERT_EQ(csv_row_set_data(&r, "1,2,3", ','), RET_OK);
+  ASSERT_EQ(csv_row_to_str(&r, &str, ','), RET_OK);
+  ASSERT_STREQ(str.str, "1,2,3\r\n");
+
+  str_reset(&str);
+  csv_row_reset(&r);
+}
+
 TEST(csv_file, row_set_data1) {
   csv_row_t r;
 
