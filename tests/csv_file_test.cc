@@ -1,4 +1,4 @@
-﻿#include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "csv_file.h"
 #include "tkc/utils.h"
 
@@ -27,6 +27,20 @@ TEST(csv_file, csv_row_to_str) {
   ASSERT_EQ(csv_row_set_data(&r, "1,2,3", ','), RET_OK);
   ASSERT_EQ(csv_row_to_str(&r, &str, ','), RET_OK);
   ASSERT_STREQ(str.str, "1,2,3\r\n");
+
+  ASSERT_EQ(csv_row_set_data(&r, "1,2,3,,,4", ','), RET_OK);
+  ASSERT_EQ(csv_row_count_cols(&r), 6);
+  ASSERT_EQ(csv_row_to_str(&r, &str, ','), RET_OK);
+  ASSERT_STREQ(str.str, "1,2,3,,,4\r\n");
+
+  ASSERT_EQ(csv_row_set_data(&r, "1,2,3,,", ','), RET_OK);
+  ASSERT_EQ(csv_row_count_cols(&r), 5);
+  ASSERT_EQ(csv_row_to_str(&r, &str, ','), RET_OK);
+  ASSERT_STREQ(str.str, "1,2,3,,\r\n");
+
+  ASSERT_EQ(csv_row_set_data(&r, "1,2,3,,,,", ','), RET_OK);
+  ASSERT_EQ(csv_row_to_str(&r, &str, ','), RET_OK);
+  ASSERT_STREQ(str.str, "1,2,3,,,,\r\n");
 
   str_reset(&str);
   csv_row_reset(&r);
