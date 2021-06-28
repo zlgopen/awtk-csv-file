@@ -6,4 +6,4 @@ helper.set_libs(['csv']).call(DefaultEnvironment)
 
 CustomWidgetSConscriptFiles = []
 SConscriptFiles = CustomWidgetSConscriptFiles + ['src/SConscript', 'demos/SConscript', 'tests/SConscript']
-SConscript(SConscriptFiles)
+helper.SConscript(SConscriptFiles)
