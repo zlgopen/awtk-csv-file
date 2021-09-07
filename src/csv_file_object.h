@@ -31,7 +31,7 @@ BEGIN_C_DECLS
  * @class csv_file_object_t
  * @parent object_t
  * @annotation["fake"]
- * 将cvs file包装成object对象。
+ * 将csv file包装成object对象。
  */
 
 /**
