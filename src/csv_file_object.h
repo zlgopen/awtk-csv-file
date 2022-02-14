@@ -3,7 +3,7 @@
  * Author: AWTK Develop Team
  * Brief:  csv file object
  *
- * Copyright (c) 2020 - 2020  Guangzhou ZHIYUAN Electronics Co.,Ltd.
+ * Copyright (c) 2020 - 2022  Guangzhou ZHIYUAN Electronics Co.,Ltd.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,9 +29,9 @@ BEGIN_C_DECLS
 
 /**
  * @class csv_file_object_t
- * @parent object_t
+ * @parent tk_object_t
  * @annotation["fake"]
- * 将csv file包装成object对象。
+ * 将cvs file包装成object对象。
  */
 
 /**
@@ -41,20 +41,20 @@ BEGIN_C_DECLS
  *
  * @param {csv_file_t*} csv csv对象(由object释放)。
  * 
- * @return {object_t*} 返回对象。
+ * @return {tk_object_t*} 返回对象。
  */
-object_t* csv_file_object_create(csv_file_t* csv);
+tk_object_t* csv_file_object_create(csv_file_t* csv);
 
 /**
  * @method csv_file_object_get_csv
  *
  * 获取csv对象。
  *
- * @param {object_t*} obj obj对象。
+ * @param {tk_object_t*} obj obj对象。
  * 
  * @return {csv_file_t*} 返回csv对象。
  */
-csv_file_t* csv_file_object_get_csv(object_t* obj);
+csv_file_t* csv_file_object_get_csv(tk_object_t* obj);
 
 END_C_DECLS
 
