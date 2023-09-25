@@ -1,4 +1,7 @@
 ﻿#include "gtest/gtest.h"
+#include "tkc/fs.h"
+#include "tkc/path.h"
+#include "tkc/mem.h"
 #include "csv_file.h"
 #include "csv_file_object.h"
 
@@ -133,4 +136,64 @@ TEST(csv_file_object, checked) {
   ASSERT_EQ(csv_file_object_get_csv(obj), csv);
 
   OBJECT_UNREF(obj);
+}
+
+TEST(csv_file_object, load_from_buff) {
+  wbuffer_t wb;
+  const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43";
+  object_t* obj = csv_file_object_load_from_buff(str, strlen(str), ',');
+
+  wbuffer_init_extendable(&wb);
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].aa"), "aa");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].bb"), "bb");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].cc"), "cc");
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].aa"), "11");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].bb"), "12");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].cc"), "13");
+
+  csv_file_object_save_to_buff(obj, &wb);
+  ASSERT_STREQ((char*)(wb.data), "aa,bb,cc\r\n11,12,13\r\n21,22,23\r\n31,32,33\r\n41,42,43\r\n");
+
+  wbuffer_deinit(&wb);
+
+  OBJECT_UNREF(obj);
+}
+
+TEST(csv_file_object, load_from_file) {
+  object_t* obj = NULL;
+  char filename[MAX_PATH+1] = {0};
+  const char* str = "aa,bb,cc\n11,12,13\n21,22,23\n31,32,33\n41,42,43";
+
+  path_prepend_temp_path(filename, "test.csv");
+  file_write(filename, str, strlen(str));
+
+  obj = csv_file_object_load(filename, ',');
+
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].aa"), "aa");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].bb"), "bb");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].cc"), "cc");
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].aa"), "11");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].bb"), "12");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].cc"), "13");
+
+  fs_remove_file(os_fs(), filename);
+  ASSERT_EQ(csv_file_object_save_as(obj, filename), RET_OK);
+  OBJECT_UNREF(obj);
+
+  obj = csv_file_object_load(filename, ',');
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].aa"), "aa");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].bb"), "bb");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].cc"), "cc");
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].aa"), "11");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].bb"), "12");
+  ASSERT_STREQ(object_get_prop_str(obj, "[1].cc"), "13");
+
+  OBJECT_UNREF(obj);
+
+  fs_remove_file(os_fs(), filename);
+
 }
