@@ -269,7 +269,13 @@ TEST(csv_file, checked) {
   ASSERT_EQ(csv_file_set_row_checked(csv, 0, TRUE), RET_OK);
   ASSERT_EQ(csv_file_is_row_checked(csv, 0), TRUE);
   ASSERT_EQ(csv_file_get_checked_rows(csv), 1);
-  
+
+  ASSERT_EQ(csv_file_get_first_checked(csv), 0);
+  ASSERT_EQ(csv_file_uncheck_all(csv), RET_OK);
+  ASSERT_EQ(csv_file_get_checked_rows(csv), 0);
+  ASSERT_EQ(csv_file_get_first_checked(csv), -1);
+  ASSERT_EQ(csv_file_set_row_checked(csv, 0, TRUE), RET_OK);
+
   ASSERT_EQ(csv_file_set_row_checked(csv, 2, TRUE), RET_OK);
   ASSERT_EQ(csv_file_is_row_checked(csv, 2), TRUE);
   ASSERT_EQ(csv_file_get_checked_rows(csv), 2);
