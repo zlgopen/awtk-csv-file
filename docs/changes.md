@@ -1,3 +1,7 @@
+2023/12/12
+  * 增加csv row object，方便在MVVM中创建对象。
+  * 增加函数csv\_file\_object\_find\_first
+
 2023/12/07
   * csv file object支持查询。
 
