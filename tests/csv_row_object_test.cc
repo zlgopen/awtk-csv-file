@@ -7,6 +7,13 @@
 #include "csv_file_object.h"
 #include "csv_row_object.h"
 
+static int32_t compare_by_col0(void* ctx, csv_row_t* row) {
+  const char* a = (const char*)ctx;
+  const char* b = csv_row_get(row, 0);
+
+  return strcmp(a, b);
+}
+
 TEST(csv_row_object, basic1) {
   const char* str = "aa,bb,cc\n11,12,13\n21,22,23";
   csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
@@ -32,6 +39,13 @@ TEST(csv_row_object, basic1) {
   ASSERT_EQ(tk_object_get_prop_int(obj, "3.0", 0), 311);
   ASSERT_EQ(tk_object_get_prop_int(obj, "3.1", 0), 322);
   ASSERT_EQ(tk_object_get_prop_int(obj, "3.2", 0), 333);
+
+  csv_row_t* row = csv_file_object_find_first(obj, (tk_compare_t)compare_by_col0, (void*)"21");
+  ASSERT_EQ(row != NULL, TRUE);
+  
+  row = csv_file_object_find_first(obj, (tk_compare_t)compare_by_col0, (void*)"311");
+  ASSERT_EQ(row != NULL, TRUE);
+  ASSERT_STREQ(csv_row_get(row, 0), "311");
 
   TK_OBJECT_UNREF(obj);
   TK_OBJECT_UNREF(robj);
