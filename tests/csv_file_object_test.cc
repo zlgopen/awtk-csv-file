@@ -289,7 +289,7 @@ TEST(csv_file_object, by_name) {
   csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
   object_t* obj = csv_file_object_create(csv);
 
-  tk_object_set_prop_str(obj, CSV_PROP_FIELDS, "aa,bb,cc");
+  tk_object_set_prop_str(obj, CSV_PROP_COL_NAMES, "aa,bb,cc");
 
   ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
   ASSERT_STREQ(object_get_prop_str(obj, "[0].aa"), "11");

@@ -246,7 +246,7 @@ csv_file_object_t* csv_file_object_cast(tk_object_t* obj);
 #define CSV_CMD_QUERY "query"
 #define CSV_CMD_QUERY_ARG_CLEAR "clear"
 
-#define CSV_PROP_FIELDS "fields"
+#define CSV_PROP_COL_NAMES "col_names"
 
 END_C_DECLS
 

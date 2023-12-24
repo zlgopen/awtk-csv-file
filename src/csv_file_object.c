@@ -166,7 +166,7 @@ static ret_t csv_file_object_set_prop(tk_object_t* obj, const char* name, const 
 
   if (tk_str_start_with(name, CSV_QUERY_PREFIX)) {
     return tk_object_set_prop(o->query_args, name, v);
-  } else if(tk_str_eq(name, CSV_PROP_FIELDS)) {
+  } else if(tk_str_eq(name, CSV_PROP_COL_NAMES)) {
     csv_row_set_data(&(o->fields), value_str(v), o->csv->sep);
     return RET_OK;
   }
