@@ -50,3 +50,42 @@ TEST(csv_row_object, basic1) {
   TK_OBJECT_UNREF(obj);
   TK_OBJECT_UNREF(robj);
 }
+
+TEST(csv_row_object, by_name) {
+  const char* str = "01,02,03\n11,12,13\n21,22,23";
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
+  tk_object_t* obj = csv_file_object_create(csv);
+  tk_object_t* robj = csv_row_object_create(obj, "33,32,33");
+
+  tk_object_set_prop_str(obj, CSV_PROP_COL_NAMES, "a,b,c");
+
+  ASSERT_EQ(3, tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0));
+  ASSERT_EQ(tk_object_can_exec(robj, TK_OBJECT_CMD_ADD, NULL), TRUE);
+  ASSERT_EQ(tk_object_can_exec(robj, TK_OBJECT_CMD_SAVE, NULL), TRUE);
+
+  ASSERT_EQ(tk_object_get_prop_int(robj, "a", 0), 33);
+  ASSERT_EQ(tk_object_get_prop_int(robj, "b", 0), 32);
+  ASSERT_EQ(tk_object_get_prop_int(robj, "c", 0), 33);
+
+  ASSERT_EQ(tk_object_set_prop_int(robj, "a", 311), RET_OK);
+  ASSERT_EQ(tk_object_set_prop_int(robj, "b", 322), RET_OK);
+  ASSERT_EQ(tk_object_set_prop_str(robj, "c", "333"), RET_OK);
+
+  ASSERT_EQ(tk_object_exec(robj, TK_OBJECT_CMD_ADD, NULL), RET_OK);
+
+  ASSERT_EQ(4, tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0));
+
+  ASSERT_EQ(tk_object_get_prop_int(obj, "3.a", 0), 311);
+  ASSERT_EQ(tk_object_get_prop_int(obj, "3.b", 0), 322);
+  ASSERT_EQ(tk_object_get_prop_int(obj, "3.c", 0), 333);
+
+  csv_row_t* row = csv_file_object_find_first(obj, (tk_compare_t)compare_by_col0, (void*)"21");
+  ASSERT_EQ(row != NULL, TRUE);
+  
+  row = csv_file_object_find_first(obj, (tk_compare_t)compare_by_col0, (void*)"311");
+  ASSERT_EQ(row != NULL, TRUE);
+  ASSERT_STREQ(csv_row_get(row, 0), "311");
+
+  TK_OBJECT_UNREF(obj);
+  TK_OBJECT_UNREF(robj);
+}
