@@ -263,24 +263,42 @@ TEST(csv_file_object, filter1) {
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_end", 40), RET_OK);
   ASSERT_EQ(object_exec(obj, CSV_CMD_QUERY, NULL), RET_OK);
   ASSERT_EQ(tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0), 2);
-  
+
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_end", 50), RET_OK);
   ASSERT_EQ(object_exec(obj, CSV_CMD_QUERY, NULL), RET_OK);
   ASSERT_EQ(tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0), 3);
-  
-  
+
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_start", 0), RET_OK);
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_end", 50), RET_OK);
   ASSERT_EQ(object_exec(obj, CSV_CMD_QUERY, NULL), RET_OK);
   ASSERT_EQ(tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0), 4);
-  
+
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_start", 40), RET_OK);
   ASSERT_EQ(tk_object_set_prop_int(obj, CSV_QUERY_PREFIX "0_end", 50), RET_OK);
   ASSERT_EQ(object_exec(obj, CSV_CMD_QUERY, NULL), RET_OK);
   ASSERT_EQ(tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0), 1);
-  
+
   ASSERT_EQ(object_exec(obj, CSV_CMD_QUERY, CSV_CMD_QUERY_ARG_CLEAR), RET_OK);
   ASSERT_EQ(tk_object_get_prop_int(obj, TK_OBJECT_PROP_SIZE, 0), 4);
 
   OBJECT_UNREF(obj);
+}
+
+TEST(csv_file_object, by_name) {
+  const char* str = "11,12,13\n21,22,23";
+  csv_file_t* csv = csv_file_create_with_buff(str, strlen(str), ',');
+  object_t* obj = csv_file_object_create(csv);
+
+  tk_object_set_prop_str(obj, CSV_PROP_FIELDS, "aa,bb,cc");
+
+  ASSERT_EQ(object_get_prop_int(obj, "#size", 0), 2);
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].aa"), "11");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].bb"), "12");
+  ASSERT_STREQ(object_get_prop_str(obj, "[0].cc"), "13");
+  
+  ASSERT_STREQ(object_get_prop_str(obj, "1.aa"), "21");
+  ASSERT_STREQ(object_get_prop_str(obj, "1.bb"), "22");
+  ASSERT_STREQ(object_get_prop_str(obj, "1.cc"), "23");
+
+  TK_OBJECT_UNREF(obj);
 }
