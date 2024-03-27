@@ -3,7 +3,7 @@
  * Author: AWTK Develop Team
  * Brief:  csv file object
  *
- * Copyright (c) 2020 - 2022  Guangzhou ZHIYUAN Electronics Co.,Ltd.
+ * Copyright (c) 2020 - 2024  Guangzhou ZHIYUAN Electronics Co.,Ltd.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -96,7 +96,7 @@ static ret_t csv_path_parse_impl(csv_file_object_t* o, csv_path_t* path, const c
     return RET_OK;
   }
 
-  path->col = csv_file_object_parse_col(o, p); 
+  path->col = csv_file_object_parse_col(o, p);
 
   return_value_if_fail((path->col >= 0) && (path->col < csv_file_get_cols(csv)), RET_BAD_PARAMS);
   return_value_if_fail((path->row >= 0) && (path->row < csv_file_get_rows(csv)), RET_BAD_PARAMS);
